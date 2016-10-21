@@ -233,6 +233,32 @@ class DrawManager:
 
         self.draw()
 
+    def incellDraw(self):
+        self.addPlot('Reptag','incell',1)
+        self.addPlot('Artag','incell',1)
+        self.addPlot('Nrtag','incell',1)
+
+        self.addPlot('Tag','incell',2)
+        self.addPlot('DTag','incell',2)
+
+        self.addPlot('Rep','incell',3)
+        self.addPlot('Reptag','incell',3)
+        self.addPlot('Reptagc','incell',3)
+        self.addPlot('Chain_3','other',3)
+
+        self.addPlot('Ar','incell',4)
+        self.addPlot('Artag','incell',4)
+        self.addPlot('Artagc','incell',4)
+
+        self.addPlot('Nr','incell',5)
+        self.addPlot('Nrtag','incell',5)
+        self.addPlot('Nrtagc','incell',5)
+
+        self.addPlot('RNA','other',6)
+        self.addPlot('Prna','other',6)
+
+        self.draw()
+
     def draw(self):
         self.width=len(self.to_draw)*3
         fig=plt.figure(figsize=[self.length,self.width])
@@ -264,22 +290,22 @@ class DrawManager:
 
 if __name__ == '__main__' :
     # outcell draw test
-    testdraw=DataManager("Debug/int50000/Cell_Rep_Nsr.txt",incell=False)
+    '''testdraw=DataManager("Cell_Rep_Nsr.txt",incell=False)
     testdraw.setNr('')
     testdraw.setAr('')
     testdraw.defaultRegister()
     #testdraw.register('dsn','other',re.compile(">4:\d+,(?P<dsn>\d+),\d+"))
-    testdraw.praseAll()
+    testdraw.praseAll()'''
 
-    '''testdraw2=DataManager("Debug/int100000/Cell_Rep_Nsr.txt")
-    testdraw2.defaultRegister()
-    testdraw2.praseAll()'''
+    testdraw=DataManager("Cell_Rep_Nsr.txt")
+    testdraw.defaultRegister()
+    testdraw.praseAll()
 
     drawManager=DrawManager(testdraw,plotint=10)
     #drawManager.addPlot('dsn','other',4)
     #drawManager.addPlot('Rep','outcell',3,testdraw2)
     #drawManager.defaultDraw()
-    drawManager.outcellDraw()
+    drawManager.incellDraw()
 
 
 
