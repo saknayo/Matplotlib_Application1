@@ -100,7 +100,7 @@ class DataManager:
         if   _type == 'incell' :
             return re.compile( '{}:[(](?P<{}>\d+)'.format(s,s) )
         elif _type == 'outcell' :
-            return re.compile( '{}:[(]0  [)](?P<{}>\d+)'.format(s,s) ) 
+            return re.compile( '{}:[(][ \d]+[)](?P<{}>\d+)'.format(s,s) ) 
         elif _type == 'other' :
             return re.compile( '{}:(?P<{}>\d+)'.format(s,s) )
 
@@ -136,7 +136,10 @@ class DataManager:
                 self.rbz_in[i][n]    = eval( self.rbz_in_patterns[i].search(s_record).group(i) )
         if self.outcell :
             for i in self.rbz_out_patterns :
-                self.rbz_out[i][n]   = eval( self.rbz_out_patterns[i].search(s_record).group(i) )
+                try :
+                    self.rbz_out[i][n]   = eval( self.rbz_out_patterns[i].search(s_record).group(i) )
+                except :
+                    print (self.rbz_out_patterns[i],'\n',s_record)
         for i in self.others_patterns :
             self.others[i][n]        = eval( self.others_patterns[i].search(s_record).group(i) )
 
@@ -170,13 +173,13 @@ class DrawManager:
                     '#ADFF2F'     ,'#7FFF00'     ,'#7CFC00'     ,'#00FF00'     ,'#32CD32'     ,'#98FB98'     ,'#90EE90'     ,'#00FA9A'     ,'#00FF7F'     ,'#3CB371'     ,'#2E8B57'     ,
                     '#228B22'     ,'#008000'     ,'#006400'     ,'#9ACD32'     ,'#6B8E23'     ,'#556B2F'     ,'#66CDAA'     ,'#8FBC8F'     ,'#20B2AA'     ,'#008B8B'     ,'#008080'     ]
         self.standard_markers={  
-              'Tn':'s' ,          'RNA':'x' ,         'Prna':'+' ,           'Ta':'o' ,           'AM':'^' ,         'Pam':'*' ,      'Chain_3':'D' ,    
-            'Cell':'s' ,        'C_Rep':'x' ,         'C_Nr':'+' ,         'C_Ar':'o' ,      'C_Re_Nr':'^' ,     'C_Re_Ar':'*' ,      'C_Nr_Ar':'D' ,   'C_Re_Nr_Ar':'.' ,  'Health_Cell':',' ,    
+              'Tn':'s' ,          'RNA':'x' ,         'Prna':'+' ,           'Ta':'o' ,           'AM':'^' ,         'Pam':'*' ,      'Chain_3':'x' ,    
+            'Cell':'s' ,        'C_Rep':'x' ,         'C_Nr':'+' ,         'C_Ar':'o' ,      'C_Re_Nr':'^' ,     'C_Re_Ar':'*' ,      'C_Nr_Ar':'D' ,   'C_Re_Nr_Ar':'.' ,  'Health_Cell':'2' ,    
              'Tag':'s' ,        'Tag_s':'x' ,        'Tag_d':'+' ,         'DTag':'o' ,       'DTag_s':'^' ,      'DTag_d':'*' , 
-             'Rep':'s' ,        'Rep_s':'x' ,        'Rep_d':'+' ,       'Reptag':'o' ,     'Reptag_s':'^' ,    'Reptag_d':'*' ,      'Reptagc':'D' ,    'Reptagc_s':'.' ,    'Reptagc_d':',' , 
-              'Nr':'s' ,         'Nr_s':'x' ,         'Nr_d':'+' ,        'Nrtag':'o' ,      'Nrtag_s':'^' ,     'Nrtag_d':'*' ,       'Nrtagc':'D' ,     'Nrtagc_s':'.' ,     'Nrtagc_d':',' , 
-              'Ar':'s' ,         'Ar_s':'x' ,         'Ar_d':'+' ,        'Artag':'o' ,      'Artag_s':'^' ,     'Artag_d':'*' ,       'Artagc':'D' ,     'Artagc_s':'.' ,     'Artagc_d':',' ,}
-        self.extra_markers=['1','2','3','4','8','h','H','x','p','d','<','>','v']
+             'Rep':'s' ,        'Rep_s':'x' ,        'Rep_d':'+' ,       'Reptag':'o' ,     'Reptag_s':'^' ,    'Reptag_d':'*' ,      'Reptagc':'D' ,    'Reptagc_s':'.' ,    'Reptagc_d':'2' , 
+              'Nr':'s' ,         'Nr_s':'x' ,         'Nr_d':'+' ,        'Nrtag':'o' ,      'Nrtag_s':'^' ,     'Nrtag_d':'*' ,       'Nrtagc':'D' ,     'Nrtagc_s':'.' ,     'Nrtagc_d':'2' , 
+              'Ar':'s' ,         'Ar_s':'x' ,         'Ar_d':'+' ,        'Artag':'o' ,      'Artag_s':'^' ,     'Artag_d':'*' ,       'Artagc':'D' ,     'Artagc_s':'.' ,     'Artagc_d':'2' ,}
+        self.extra_markers=['1','3','4','8','h','H','p','d','<','>','v']
 
     def getMarker(self,tag):
         if tag in self.standard_markers :
@@ -272,11 +275,11 @@ class DrawManager:
                             db[0].getRecord(tag,_type,self.plotint),
                             marker=self.getMarker(tag),
                             linestyle=self.getLinestyle(db[0]),
-                            linewidth=0.5,
+                            linewidth=0.8,
                             mfc =self.getFaceColor(tag) ,
                             mec =self.getEdgeColor(tag,_type),
-                            mew=1,  # mew:markeredgewidth ,mec:markeredgecolor , mfc:markerfacecolor
-                            markersize=1, 
+                            mew=0.5,  # mew:markeredgewidth ,mec:markeredgecolor , mfc:markerfacecolor
+                            markersize=3, 
                             label=tag,
                             )
                     plt.legend()
@@ -301,7 +304,7 @@ if __name__ == '__main__' :
     testdraw.defaultRegister()
     testdraw.praseAll()
 
-    drawManager=DrawManager(testdraw,plotint=10)
+    drawManager=DrawManager(testdraw,plotint=10,dpi=200)
     #drawManager.addPlot('dsn','other',4)
     #drawManager.addPlot('Rep','outcell',3,testdraw2)
     #drawManager.defaultDraw()
