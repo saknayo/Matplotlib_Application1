@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import matplotlib
 import numpy 
+import os
 import re
 from functools import lru_cache
 from collections import defaultdict
@@ -152,6 +153,14 @@ class DataManager:
     def __eq__(self,ba):
         return self.getId() == ba
 
+def autolabel(rects,ax):
+    # attach some text labels
+    for rect in rects:
+        height = rect.get_height()
+        ax.text(rect.get_x() + rect.get_width()/2., 1.05*height,
+                '%d' % int(height),
+                ha='center', va='bottom')
+
 class DrawManager:
     def __init__(self,maindb,plotint=1,dpi=600):
         self.main_db=maindb
@@ -207,10 +216,22 @@ class DrawManager:
         if colum not in self.to_draw :
             self.to_draw[colum]=defaultdict(list)
         if _db : # comparation view
-            self.to_draw[colum][tag].append([_db,_type])
+            self.to_draw[colum][tag].append([_db, _type, _db.getX(self.plotint), _db.getRecord(tag,_type,self.plotint)])
             #self.marks[str(colum)+tag+_type+str(_db.getId)]
         else :
-            self.to_draw[colum][tag].append([self.main_db,_type])
+            self.to_draw[colum][tag].append([self.main_db, _type, self.main_db.getX(self.plotint), self.main_db.getRecord(tag,_type,self.plotint)])
+    def addPlotSum(self,tags,_type,colum,_db = None):
+        ''' tag = Reptag , _type = incell|outcell|other , _db = instance of DataManager '''
+        if colum not in self.to_draw :
+            self.to_draw[colum]=defaultdict(list)
+        tag_name='+'.join(tags)
+        if _db : # comparation view
+            self.to_draw[colum][tag_name].append([ _db, _type, _db.getX(self.plotint),
+                sum(_db.getRecord(tag,_type,self.plotint) for tag in tags) ])
+            #self.marks[str(colum)+tag+_type+str(_db.getId)]
+        else :
+            self.to_draw[colum][tag_name].append([ self.main_db, _type, self.main_db.getX(self.plotint),
+                sum(self.main_db.getRecord(tag,_type,self.plotint) for tag in tags) ])
     def defaultDraw(self):
         self.addPlot('Rep','outcell',1)
         self.addPlot('Reptag','outcell',1)
@@ -227,14 +248,16 @@ class DrawManager:
 
     def outcellDraw(self):
         self.addPlot('Reptag','outcell',1)
+        self.addPlot('Rep','outcell',1)
         self.addPlot('Reptagc','outcell',1)
         self.addPlot('Chain_3','other',1)
         self.addPlot('Tag','outcell',2)
         self.addPlot('DTag','outcell',2)
         self.addPlot('RNA','other',3)
         self.addPlot('Prna','other',3)
+        self.addPlotSum(['Reptag','Reptagc'],'outcell',4)
 
-        self.draw()
+        self.draw(_meanDraw=True)
 
     def incellDraw(self):
         self.addPlot('Reptag','incell',1)
@@ -262,17 +285,21 @@ class DrawManager:
 
         self.draw()
 
-    def draw(self):
+    def draw(self,_meanDraw=False):
         self.width=len(self.to_draw)*3
         fig=plt.figure(figsize=[self.length,self.width])
+        if (_meanDraw):
+            total_subs=max(self.to_draw)+1
+        else:
+            total_subs=max(self.to_draw)
         for c in self.to_draw :
-            ax=fig.add_subplot( max(self.to_draw), 1, c )
+            ax=fig.add_subplot( total_subs, 1, c )
             for tag in self.to_draw[c] :
                 for db in self.to_draw[c][tag] :
                     _type=db[1]
                     #print(tag,repr(db[0].getRecord(tag,_type,self.plotint)))
-                    ax.plot(db[0].getX(self.plotint),
-                            db[0].getRecord(tag,_type,self.plotint),
+                    ax.plot(db[2], # x
+                            db[3], # y
                             marker=self.getMarker(tag),
                             linestyle=self.getLinestyle(db[0]),
                             linewidth=0.8,
@@ -283,24 +310,39 @@ class DrawManager:
                             label=tag,
                             )
                     plt.legend()
-        plt.legend()
-        plt.savefig('test_{}.png'.format(self.plotint),dpi=self.dpi)
+        if _meanDraw :
+            ax=fig.add_subplot(total_subs,1,total_subs)
+            self.meanPlot(ax)
+
+        
+        plt.savefig('test_{}_{}.png'.format( self.plotint, os.path.basename(os.getcwd()) ),
+                     dpi=self.dpi)
         plt.show()
 
+    def meanPlot(self,ax):
+        self.mean_name_list=['Reptag','Reptagc','Rep','Tag']
+        self.mean_ticks=numpy.arange(len(self.mean_name_list))
+        self.mean_list=[self.main_db.getRecord(i,'outcell',self.plotint)[int(self.dots/3):].mean() for i in self.mean_name_list]
+        mbar=ax.bar(self.mean_ticks,self.mean_list)#,width=10*self.length/self.dots)
+        ax.set_xticks(self.mean_ticks)
+        ax.set_xticklabels(self.mean_name_list)
+        autolabel(mbar,ax)
 
+        
 
 
 
 if __name__ == '__main__' :
     # outcell draw test
-    '''testdraw=DataManager("Cell_Rep_Nsr.txt",incell=False)
+    testdraw=DataManager("Debug/int1000/psp_0.6_0.4/Cell_Rep_Nsr.txt",incell=False)
+    '''
     testdraw.setNr('')
     testdraw.setAr('')
     testdraw.defaultRegister()
     #testdraw.register('dsn','other',re.compile(">4:\d+,(?P<dsn>\d+),\d+"))
     testdraw.praseAll()'''
 
-    testdraw=DataManager("Cell_Rep_Nsr.txt")
+    #testdraw=DataManager("Cell_Rep_Nsr.txt")
     testdraw.defaultRegister()
     testdraw.praseAll()
 
@@ -308,7 +350,8 @@ if __name__ == '__main__' :
     #drawManager.addPlot('dsn','other',4)
     #drawManager.addPlot('Rep','outcell',3,testdraw2)
     #drawManager.defaultDraw()
-    drawManager.incellDraw()
+    #drawManager.incellDraw()
+    drawManager.outcellDraw()
 
 
 
